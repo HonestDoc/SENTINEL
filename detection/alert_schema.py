@@ -27,8 +27,8 @@ class SentinelAlert:
     # Entity
     host_name:            str = ''
     user_name:            str = ''
-    source_ip:            str = ''
-    destination_ip:       str = ''
+    source_ip:            str = None
+    destination_ip:       str = None
     destination_port:     int = 0
 
     # MITRE ATT&CK
