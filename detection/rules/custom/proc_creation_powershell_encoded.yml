@@ -1,0 +1,27 @@
+# SENTINEL/detection/rules/custom/proc_creation_powershell_encoded.yml
+title: PowerShell Encoded Command Execution
+id: a87f9d42-3b2c-4e8f-9a11-2c45d6f78901
+status: test
+description: >
+  Detects PowerShell executing base64 encoded commands.
+  Commonly used by attackers to obfuscate malicious code.
+author: SENTINEL Project
+date: 2024/03/15
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        Image|endswith: '\powershell.exe'
+        CommandLine|contains:
+            - ' -enc '
+            - ' -EncodedCommand '
+            - ' -e BAA'
+    condition: selection
+falsepositives:
+    - Legitimate administrative scripts
+    - Some software installers
+level: medium
+tags:
+    - attack.execution
+    - attack.t1059.001
