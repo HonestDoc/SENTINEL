@@ -12,7 +12,11 @@
       "Legitimate administrative scripts",
       "Some software installers"
     ],
-    "query": "process.executable:*\\\\powershell.exe AND (process.command_line:(*\\ \\-enc\\ * OR *\\ \\-EncodedCommand\\ * OR *\\ \\-e\\ BAA*))",
+    "query": {
+      "query_string": {
+        "query": "process.executable:*\\\\powershell.exe AND (process.command_line:(*\\ \\-enc\\ * OR *\\ \\-EncodedCommand\\ * OR *\\ \\-e\\ BAA*))"
+      }
+    },
     "rule_file": "detection\\rules\\custom\\proc_creation_powershell_encoded.yml"
   }
 }

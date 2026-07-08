@@ -37,7 +37,11 @@ class SigmaRuleCompiler:
 
             if result.returncode == 0 and result.stdout.strip():
                 lines = result.stdout.strip().splitlines()
-                return lines[-1]
+                return {
+    "query_string": {
+        "query": lines[-1]
+    }
+}
 
             print(result.stderr)
             return None
