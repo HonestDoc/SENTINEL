@@ -59,6 +59,27 @@ class ElasticsearchWriter:
             print(f"Created index: {ALERT_INDEX}")
         else:
             print(f"Index exists: {ALERT_INDEX}")
+                # Also create a profile index for behavioral baselines
+        profile_mapping = {
+            'mappings': {
+                'properties': {
+                    'entity_id':            {'type': 'keyword'},
+                    'entity_type':          {'type': 'keyword'},
+                    'last_updated':         {'type': 'date'},
+                    'active_hours_mean':    {'type': 'float'},
+                    'active_hours_std':     {'type': 'float'},
+                    'unique_processes':     {'type': 'integer'},
+                    'cmdline_entropy_mean': {'type': 'float'},
+                    'cluster_id':           {'type': 'integer'},
+                    'peer_group':           {'type': 'keyword'},
+                }
+            }
+        }
+
+        if not self.es.indices.exists(index='sentinel-profiles'):
+            self.es.indices.create(index='sentinel-profiles',
+                                   body=profile_mapping)
+            print("Created index: sentinel-profiles")
 
     def write_alert(self, alert):
         doc = alert.to_es_doc() if hasattr(alert, 'to_es_doc') else alert

@@ -6,6 +6,23 @@ import json
 import requests
 import os
 
+KILL_CHAIN_MAPPING = {
+    'reconnaissance':       'reconnaissance',
+    'resource-development': 'weaponization',
+    'initial-access':       'delivery',
+    'execution':            'exploitation',
+    'persistence':          'installation',
+    'privilege-escalation': 'exploitation',
+    'defense-evasion':      'exploitation',
+    'credential-access':    'exploitation',
+    'discovery':            'exploitation',
+    'lateral-movement':     'actions-on-objectives',
+    'collection':           'actions-on-objectives',
+    'command-and-control':  'command-and-control',
+    'exfiltration':         'actions-on-objectives',
+    'impact':               'actions-on-objectives',
+}
+
 class MitreMapper:
     """
     Downloads MITRE ATT&CK STIX data and builds lookup structures.
