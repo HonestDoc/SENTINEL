@@ -1,0 +1,18 @@
+{
+  "a87f9d42-3b2c-4e8f-9a11-2c45d6f78901": {
+    "id": "a87f9d42-3b2c-4e8f-9a11-2c45d6f78901",
+    "title": "PowerShell Encoded Command Execution",
+    "description": "Detects PowerShell executing base64 encoded commands. Commonly used by attackers to obfuscate malicious code.\n",
+    "level": "medium",
+    "tags": [
+      "attack.execution",
+      "attack.t1059.001"
+    ],
+    "falsepositives": [
+      "Legitimate administrative scripts",
+      "Some software installers"
+    ],
+    "query": "process.executable:*\\\\powershell.exe AND (process.command_line:(*\\ \\-enc\\ * OR *\\ \\-EncodedCommand\\ * OR *\\ \\-e\\ BAA*))",
+    "rule_file": "detection\\rules\\custom\\proc_creation_powershell_encoded.yml"
+  }
+}
