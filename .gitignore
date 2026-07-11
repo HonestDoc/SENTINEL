@@ -13,3 +13,5 @@ data/explanations/
 *.key
 
 secrets.*
+
+reports/coverage_*.json
