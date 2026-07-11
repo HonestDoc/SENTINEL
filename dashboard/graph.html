@@ -1,0 +1,220 @@
+<!-- SENTINEL/dashboard/graph.html -->
+<!-- Open on HOST in browser at file:// or via Flask -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SENTINEL — Host Communication Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { background: #0d1117; color: #c9d1d9; font-family: monospace; margin: 0; }
+    #graph-container { width: 100vw; height: 85vh; }
+    svg { width: 100%; height: 100%; }
+
+    .node circle {
+      stroke: #30363d;
+      stroke-width: 2px;
+      cursor: pointer;
+    }
+    .node.critical circle { fill: #f85149; }
+    .node.high circle     { fill: #d29922; }
+    .node.medium circle   { fill: #388bfd; }
+    .node.low circle      { fill: #3fb950; }
+    .node.crown circle    { stroke: #f0e68c; stroke-width: 3px; }
+
+    .link          { stroke-opacity: 0.5; }
+    .link.new-edge { stroke: #f0883e; stroke-width: 2.5px; }
+    .link.normal   { stroke: #388bfd; stroke-width: 1px; }
+
+    .node text { fill: #c9d1d9; font-size: 11px; pointer-events: none; }
+
+    #info-panel {
+      position: fixed; right: 20px; top: 20px;
+      background: #161b22; border: 1px solid #30363d;
+      padding: 15px; border-radius: 8px; width: 300px;
+      max-height: 80vh; overflow-y: auto;
+    }
+    #info-panel h3 { color: #58a6ff; margin-top: 0; }
+    .risk-bar { background: #30363d; border-radius: 4px; height: 8px; margin: 5px 0; }
+    .risk-fill { height: 100%; border-radius: 4px; }
+
+    #header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d; }
+    #header h2 { margin: 0; color: #58a6ff; }
+    .legend { display: flex; gap: 15px; margin-top: 5px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h2>SENTINEL — Host Communication Graph</h2>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f85149"></div> Critical
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#d29922"></div> High
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#388bfd"></div> Medium/Low
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f0883e"></div> New Edge
+    </div>
+  </div>
+</div>
+
+<div id="graph-container">
+  <svg id="graph"></svg>
+</div>
+
+<div id="info-panel">
+  <h3>Entity Details</h3>
+  <p id="info-content" style="color:#8b949e">Click a node to see details</p>
+</div>
+
+<script>
+const svg = d3.select('#graph');
+const width = document.getElementById('graph-container').clientWidth;
+const height = document.getElementById('graph-container').clientHeight;
+
+svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+const g = svg.append('g');
+
+// Zoom behavior
+svg.call(d3.zoom()
+  .scaleExtent([0.1, 4])
+  .on('zoom', (event) => g.attr('transform', event.transform)));
+
+// Load graph data from Flask API
+fetch('http://localhost:5000/api/graph')
+  .then(r => r.json())
+  .then(data => {
+    if (!data.nodes || !data.links) {
+      document.getElementById('info-content').textContent =
+        'No graph data yet. Run behavioral engine first.';
+      return;
+    }
+    renderGraph(data);
+  })
+  .catch(err => {
+    // Demo mode with sample data
+    renderGraph(getSampleData());
+  });
+
+function getSampleData() {
+  return {
+    nodes: [
+      {id: 'WIN-001', risk_score: 15, risk_tier: 'low', is_crown_jewel: false},
+      {id: 'WIN-007', risk_score: 84, risk_tier: 'critical', is_crown_jewel: false},
+      {id: 'SRV-SHARE', risk_score: 45, risk_tier: 'medium', is_crown_jewel: false},
+      {id: 'DC-01', risk_score: 5, risk_tier: 'low', is_crown_jewel: true},
+    ],
+    links: [
+      {source: 'WIN-001', target: 'SRV-SHARE', connection_count: 50, is_new_edge: false},
+      {source: 'WIN-007', target: 'SRV-SHARE', connection_count: 8, is_new_edge: true},
+      {source: 'WIN-007', target: 'WIN-001', connection_count: 3, is_new_edge: true},
+      {source: 'SRV-SHARE', target: 'DC-01', connection_count: 100, is_new_edge: false},
+    ]
+  };
+}
+
+function renderGraph(data) {
+  const simulation = d3.forceSimulation(data.nodes)
+    .force('link', d3.forceLink(data.links).id(d => d.id).distance(120))
+    .force('charge', d3.forceManyBody().strength(-400))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(40));
+
+  // Draw edges
+  const link = g.append('g')
+    .selectAll('line')
+    .data(data.links)
+    .join('line')
+    .attr('class', d => d.is_new_edge ? 'link new-edge' : 'link normal')
+    .attr('stroke-width', d => Math.max(1, Math.log(d.connection_count + 1)));
+
+  // Draw nodes
+  const node = g.append('g')
+    .selectAll('g')
+    .data(data.nodes)
+    .join('g')
+    .attr('class', d => `node ${d.risk_tier} ${d.is_crown_jewel ? 'crown' : ''}`)
+    .call(d3.drag()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null; d.fy = null;
+      })
+    );
+
+  node.append('circle')
+    .attr('r', d => 8 + d.risk_score / 12);
+
+  node.append('text')
+    .text(d => d.id)
+    .attr('x', 15).attr('y', 4);
+
+  // Click to show details
+  node.on('click', (event, d) => {
+    const color = d.risk_tier === 'critical' ? '#f85149' :
+                  d.risk_tier === 'high' ? '#d29922' :
+                  d.risk_tier === 'medium' ? '#388bfd' : '#3fb950';
+
+    document.getElementById('info-content').innerHTML = `
+      <strong style="color:#c9d1d9">${d.id}</strong><br>
+      ${d.is_crown_jewel ? '<span style="color:#f0e68c">⭐ Crown Jewel Asset</span><br>' : ''}
+      <br>
+      <strong>Risk Score:</strong>
+      <span style="color:${color}">${d.risk_score} (${d.risk_tier.toUpperCase()})</span>
+      <div class="risk-bar">
+        <div class="risk-fill" style="width:${d.risk_score}%;
+             background:${color}"></div>
+      </div>
+      <br>
+      <strong>Connections:</strong> ${d.out_degree || 0} outbound<br>
+      <strong>Community:</strong> ${d.community !== undefined ? d.community : 'N/A'}<br>
+      <br>
+      <button onclick="fetch('http://localhost:5000/api/attack-paths/${d.id}')
+        .then(r=>r.json())
+        .then(p=>showPaths(p))"
+        style="background:#388bfd;border:none;color:white;
+               padding:5px 10px;cursor:pointer;border-radius:4px">
+        Find Attack Paths
+      </button>
+    `;
+  });
+
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+}
+
+function showPaths(paths) {
+  if (!paths || paths.length === 0) {
+    document.getElementById('info-content').innerHTML +=
+      '<br><strong>No attack paths to crown jewels found</strong>';
+    return;
+  }
+  let html = '<br><strong>Attack Paths to Crown Jewels:</strong><br>';
+  paths.forEach(p => {
+    html += `<div style="margin:5px 0;padding:5px;
+             background:#0d1117;border-radius:4px">
+      ${p.path.join(' → ')}<br>
+      <small style="color:#8b949e">Risk: ${p.path_risk_score}</small>
+    </div>`;
+  });
+  document.getElementById('info-content').innerHTML += html;
+}
+</script>
+</body>
+</html>
