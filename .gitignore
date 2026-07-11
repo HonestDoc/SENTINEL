@@ -7,3 +7,9 @@ data/processed/
 data/models/
 
 data/explanations/
+
+.env
+
+*.key
+
+secrets.*
