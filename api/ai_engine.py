@@ -1,6 +1,6 @@
 # SENTINEL/api/ai_engine.py
 # Runs on: HOST Windows 11
-# Uses: Ollama local LLM (Mistral 7B) — completely free, no API key needed
+# Uses: Ollama local LLM (Phi-3) — completely free, no API key needed
 
 import ollama
 import json
@@ -15,10 +15,10 @@ class AIAnalysisEngine:
 
     Requires Ollama running as a background service on HOST.
     Install: https://ollama.com/download
-    Model:   ollama pull mistral
+    Model:   ollama pull phi3
     """
 
-    def __init__(self, model='mistral'):
+    def __init__(self, model='phi3'):
         self.model = model
         self._verify_ollama()
 
