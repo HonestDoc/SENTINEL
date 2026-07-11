@@ -10,6 +10,7 @@ WINDOWS_LOG_INDEX  = os.getenv('WINDOWS_LOG_INDEX', 'sentinel-windows')
 ZEEK_LOG_INDEX     = os.getenv('ZEEK_LOG_INDEX', 'filebeat')
 CROWN_JEWEL_HOSTS = os.getenv('CROWN_JEWEL_HOSTS', 'DC-01').split(',')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'phi3')
 
 CROWN_JEWEL_HOSTS      = ['DC-01', 'DB-SERVER', 'FILE-SERVER']
 ANOMALY_CONTAMINATION  = 0.05
