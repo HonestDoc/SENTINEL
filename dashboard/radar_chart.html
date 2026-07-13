@@ -1,0 +1,40 @@
+<!-- SENTINEL/dashboard/radar_chart.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background:#0d1117">
+<canvas id="radar" width="500" height="500"></canvas>
+<script>
+// Fetch entity behavioral data from Flask API
+const host = new URLSearchParams(window.location.search).get('host') || 'WIN-007';
+
+fetch(`http://localhost:5000/api/explain/${host}`)
+  .then(r => r.json())
+  .then(data => {
+    const contrib = data.contributions || [];
+    const labels = contrib.slice(0,6).map(c => c.feature_key);
+    const values = contrib.slice(0,6).map(c => Math.abs(c.contribution_pct));
+
+    new Chart(document.getElementById('radar'), {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: host,
+          data: values,
+          backgroundColor: 'rgba(248, 81, 73, 0.2)',
+          borderColor: '#f85149',
+          pointBackgroundColor: '#f85149'
+        }]
+      },
+      options: {
+        scales: { r: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } } },
+        plugins: { legend: { labels: { color: '#c9d1d9' } } }
+      }
+    });
+  });
+</script>
+</body>
+</html>

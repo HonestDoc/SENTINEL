@@ -67,7 +67,7 @@ def get_risk_scores():
                     'terms': {'field': 'host_name', 'size': 100},
                     'aggs': {
                         'max_risk': {'max': {'field': 'risk_score'}},
-                        'alert_count': {'value_count': {'field': 'alert_id'}}
+                        'alert_count': {'value_count': {'field': '@timestamp'}}
                     }
                 }
             },
@@ -150,7 +150,7 @@ def explain_entity(host_name):
                 'unique_ttps': {'cardinality': {'field': 'mitre_technique'}},
                 'unique_tactics': {'cardinality': {'field': 'mitre_tactic'}},
                 'max_anomaly': {'min': {'field': 'anomaly_score'}},
-                'alert_count': {'value_count': {'field': 'alert_id'}}
+                'alert_count': {'value_count': {'field': '@timestamp'}}
             },
             'size': 0
         }
